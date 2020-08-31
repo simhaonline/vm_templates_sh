@@ -1,0 +1,134 @@
+# debian/distro_pkgs.txt
+# to use variables, source this file:
+# source distro_pkgs.txt ; $pkgmgr_install $pkgs_cmdln_tools 2> /tmp/pkgsInstall_stderr.txt | tee /tmp/pkgsInstall_stdout.txt
+
+pkgmgr_install='apt-get -y --no-install-recommends install'
+pkgmgr_search='apt-cache search'
+pkgmgr_update='apt-get update'
+
+pkg_repos_sources() {
+	sep='#--------------------#'
+	argX='/etc/apt/sources.list'
+	
+	printf "${sep}\n$argX\n" | cat - $argX
+	#printf "${sep}\n$argX\n" ; $argX
+}
+
+pkgs_installed() {
+	METHOD=${1:-explicit}
+	
+	echo -e 'tasksel --list-tasks\n----------'
+	apt-get update
+	tasksel --list-tasks | column ; echo ''
+	echo -e 'dpkg -l | grep -Ee "meta[-]*package" | sed -n "s|^\w*\s*\(\S*\)\s*.*|\1|p"\n----------'
+	dpkg -l | grep -Ee "meta[-]*package" | sed -n 's|^\w*\s*\(\S*\)\s*.*|\1|p' | column ; echo '' ; sleep 3
+	
+	#echo '### for pkg message: see /var/log/[dpkg.log | apt/history.log] ###'
+	if [ "leaf" = "$METHOD" ] ; then
+		pkg_nms=$(dpkg-query --show -f='${binary:Package} ') ;
+		(for pkg_nm in $pkg_nms ; do
+			rdepns_info=$(apt-cache rdepends --installed $pkg_nm) ;
+			no_rdepns=$(echo -n $rdepns_info | sed '/Reverse Depends:/ s|.*: \(.*\)|\1|') ;
+			if [ -z "$no_rdepns" ] ; then continue ; fi ;
+			
+			pkg_pool=$(apt-cache show $pkg_nm | sed -n 's|Filename: pool\/\(\w*\)\/.*|\1|p' | head -n 1) ;
+			if [ "updates" = "$pkg_pool" ] ; then
+				pkg_pool=$(apt-cache show $pkg_nm | sed -n 's|Filename: pool\/updates\/\(\w*\)\/.*|\1|p' | head -n 1) ;
+			fi ;
+			if [ "" = "$pkg_pool" ] ; then pkg_pool="BLANK" ; fi ;
+			
+			echo "($pkg_pool)" $(dpkg-query --show -f='${Section}/${Package}\n' $pkg_nm) ;
+		done) | sort | column ;
+	else
+		# '~i !~M' for explicitly installed; '~i ~M' for dependencies
+		#pkg_nms=$(aptitude search '~i !~M' | tr -s ' ' '\t' | cut -f 2)
+		# showmanual for explicitly installed; showauto for dependencies
+		pkg_nms=$(apt-mark showmanual) ;
+		(for pkg_nm in $pkg_nms ; do
+			sect_pkg=$(dpkg-query --show --showformat='${Section}/${Package}\n' $pkg_nm) ;
+			pkg_pool=$(apt-cache show $pkg_nm | sed -n 's|Filename: pool\/\(\w*\)\/.*|\1|p' | head -n 1) ;
+			if [ "updates" = "$pkg_pool" ] ; then
+				pkg_pool=$(apt-cache show $pkg_nm | sed -n 's|Filename: pool\/updates\/\(\w*\)\/.*|\1|p' | head -n 1) ;
+			fi ;
+			if [ "" = "$pkg_pool" ] ; then pkg_pool="BLANK" ; fi ;
+			echo "($pkg_pool) $sect_pkg" ;
+		done) | sort | column ;
+	fi
+}
+
+pkgs_cmdln_extras="calcurse taskwarrior msmtp-mta isync mutt abook transmission-cli rtorrent irssi finch cmus"
+# rclone
+
+pkgs_filesys_utils="cryptsetup dosfstools gdisk parted fsarchiver exfat-fuse exfat-utils"
+
+pkgs_cmdln_tools="sudo ntp python bash bsdmainutils file nfs-common mc rlwrap nano ufw clamav curl wget aria2 netcat-traditional rsync bzip2 zip unzip p7zip-full gpg ssh pass keychain openssl gnutls-bin libnss3-dev libnss3-tools w3m printer-driver-cups-pdf qpdf avahi-daemon avahi-utils sqlite3 git mercurial tcpdump nmap dialog screen tmux"
+
+
+pkgs_displaysvr_xorg="xorg xserver-xorg-video-vesa xserver-xorg-video-intel xserver-xorg-input-libinput xserver-xorg-input-evdev xdg-utils xdg-user-dirs xscreensaver"
+
+pkgs_deskenv_lxde="$pkgs_displaysvr_xorg lightdm obconf obsession menu lxde conky"
+# obmenu openbox-menu
+
+pkgs_deskenv_lxqt="$pkgs_displaysvr_xorg sddm obconf-qt obsession menu lxqt conky"
+# obmenu openbox-menu
+
+
+# possibly extra Qt:Gtk deskenv apps
+# ----------------------------------------
+# (disk utils) partitionmanager:gparted
+# (ifc connect) cmst:wicd bluez-qt:blueman
+# (editors, office apps) :geany libreoffice :gnucash
+# (file share) transmission-qt:transmission-gtk luckybackup:grsync
+# (archivers) ark:xarchiver
+# (clipboard tool) qlipper:parcellite
+# (crypt utils) keepassxc:keepass2 qtpass: kwalletmanager:seahorse
+# (browser) :chromium falkon:firefox-esr
+# (email) :thunderbird
+# (print utils) skanlite:simple-scan qpdfview:epdfview
+# (db utils) sqlitebrowser:
+# (IM-IRC) quassel:hexchat :pidgin
+# (vcs gui) qgit:gitg tortoisehg:
+# (traffic util) nmapsi4:zenmap wireshark
+# (media plyr) clementine:gmusicbrowser smplayer:totem
+# (audio tool) pavucontrol-qt:pavucontrol k3b:brasero
+# (image tool) lximage-qt:gpicview :gimp
+# (webcam tool) kamoso:guvcview
+# (PIM tools) :gsimplecal :orage
+# (ebook utils) calibre: okular:fbreader
+
+
+# addons browser: User Agent Switcher, AdBlock, Firebug, Https Everywhere,
+#  uBlock, NoScript
+
+# addons thunderbird: EnigMail, gContactSync, Lightning, Provider f/Ggl Cal,
+#  TorBirdy
+
+
+pkgs_lang_py2="python-pip pylint pychecker python-coverage python-invoke python-sphinx python-pytest python-pep8 cookiecutter"
+
+pkgs_lang_py3="python3-pip python3-coverage python3-invoke python3-sphinx python3-pytest python3-pep8"
+
+pkgs_lang_py="${pkgs_lang_py2} ${pkgs_lang_py3}"
+
+lang_c_gui="" # "libgtk-3-dev libgtk2.0-dev qtbase5-dev libqt4-dev"
+lang_c_crypto="" # "libgcrypt20-dev libgpgme-dev libssl-dev libgnutls28-dev libmbedtls-dev"
+lang_c_db="" # "libsqlite3-dev libdbi-dev libdbd-sqlite3"
+pkgs_lang_c="cmake automake libtool gdb pkgconf splint cppcheck llvm clang check libcunit1-dev doxygen liblog4c-dev libpcre3-dev libglib2.0-dev lldb gfortran lcov valgrind rake swig ${lang_c_gui} ${lang_c_crypto} ${lang_c_db}"
+# ddd
+
+pkgs_lang_java="default-jdk checkstyle gradle ant cobertura scala"
+# libjava-gnome-java
+default_java_home="/usr/lib/jvm/default-java"
+default_java_version="1.7"
+
+
+lang_scm_gui="" # "gauche-gtk"
+pkgs_lang_scm="gauche gauche-dev ${lang_scm_gui}"
+
+pkgs_lang_hs="ghc alex happy ghc-haddock hlint libghc-hunit-dev libghc-hslogger-dev"
+
+pkgs_lang_scala="default-jdk checkstyle gradle ant cobertura scala"
+
+pkgs_lang_ml="ocaml opam camlp4-extra oasis libounit-ocaml-dev libctypes-ocaml-dev ocaml-core"
+
+pkgs_lang_lisp="sbcl"

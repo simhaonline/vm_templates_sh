@@ -13,15 +13,27 @@ source code tarball download:
         
         FETCHCMD='aria2c --check-certificate=false'
         
-        $FETCHCMD https://bitbucket.org/thebridge0491/vm_templates/[get | archive]/master.zip
+        $FETCHCMD https://bitbucket.org/thebridge0491/vm_templates_sh/[get | archive]/master.zip
 
 version control repository clone:
         
-        git clone https://bitbucket.org/thebridge0491/vm_templates.git
+        git clone https://bitbucket.org/thebridge0491/vm_templates_sh.git
 
 Usage
 -----
-        TODO - fix usage info
+to build virtual machine using auto install methods or chroot scripts:
+        
+        # NOTE, relevant comments -- transfer file(s) ; run manual commands
+        
+        [VOL_MGR=zfs] sh vminstall_auto.sh [<distro> [<guest>]]
+        
+        sh vminstall_chroot.sh [<distro> [<guest>]]
+        
+        # build examples:
+        
+        [VOL_MGR=zfs] sh vminstall_auto.sh [freebsd [freebsd-Release-zfs]]
+        
+        sh vminstall_chroot.sh [freebsd [freebsd-Release-zfs]]
 
 Author/Copyright
 ----------------
