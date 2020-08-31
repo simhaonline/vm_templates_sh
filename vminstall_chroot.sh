@@ -91,6 +91,59 @@ voidlinux() {
   #-----------------------------------------
 }
 
+artix() {
+  GUEST=${1:-artix-Rolling-lvm}
+  ISO_PATH=${ISO_PATH:-`find ${ISOS_PARDIR}/artix -name 'artix-*-openrc-*.iso' | tail -n1`}
+  #IMAGE_OPTS=${IMAGE_OPTS:-"-cdrom ${ISO_PATH}"}
+  INST_SRC_OPTS=${INST_SRC_OPTS:---cdrom="${ISO_PATH}"}
+  (cd ${ISOS_PARDIR}/artix ; sha256sum --ignore-missing -c sha256sums) ; sleep 5
+  
+  ##!! login user/passwd: artix/artix 
+  
+  #sudo su
+  #mount -o remount,size=1G /run/artix/cowspace ; df -h ; sleep 5
+  #pacman-key --init ; pacman-key --populate artix
+  #pacman -Sy artix-keyring gnu-netcat parted gptfdisk lvm2
+    
+  #------------ if using ZFS ---------------
+  ## NOTE, transfer archzfs config file: init/archlinux/repo_archzfs.cfg
+  #cat init/archlinux/repo_archzfs.cfg >> /etc/pacman.conf
+  #curl -o /tmp/archzfs.gpg http://archzfs.com/archzfs.gpg
+  #pacman-key --add /tmp/archzfs.gpg ; pacman-key --lsign-key F75D9D76
+  
+  #pacman -Sy zfs-utils
+  
+  #pacman -Sy zfs-dkms
+  
+  #modprobe zfs ; sleep 5 ; zpool version
+  #-----------------------------------------
+}
+
+alpine() {
+  GUEST=${1:-alpine-Stable-lvm}
+  ISO_PATH=${ISO_PATH:-`find ${ISOS_PARDIR}/alpine -name 'alpine-extended-*-x86_64.iso' | tail -n1`}
+  #IMAGE_OPTS=${IMAGE_OPTS:-"-cdrom ${ISO_PATH}"}
+  INST_SRC_OPTS=${INST_SRC_OPTS:---cdrom="${ISO_PATH}"}
+  (cd ${ISOS_PARDIR}/alpine ; sha256sum --ignore-missing -c alpine-extended-*-x86_64.iso.sha256) ; sleep 5
+  
+  ##!! login user/passwd: root/-
+  
+  #ifconfig ; ifconfig {ifdev} up ; udhcpc -i {ifdev} ; cd /tmp
+  
+  #service sshd stop
+  #export MIRRORHOST=mirror.math.princeton.edu/pub/alpinelinux ; . /etc/os-release
+  #echo http://${MIRRORHOST}/v$(cat /etc/alpine-release | cut -d. -f1-2)/main >> /etc/apk/repositories
+  #apk update
+  #apk add e2fsprogs dosfstools sgdisk lvm2 util-linux multipath-tools
+  #setup-udev
+  
+  #------------ if using ZFS ---------------
+  #apk add zfs
+  
+  #modprobe zfs ; sleep 5 ; zpool version
+  #-----------------------------------------
+}
+
 
 debian() {
   GUEST=${1:-debian-Stable-lvm}
@@ -112,6 +165,65 @@ debian() {
   #sed -i '/main.*$/ s|main.*$|main contrib non-free|' /etc/apt/sources.list
   #apt-get --yes update
   #apt-get --yes install -t $VERSION_CODENAME-backports --no-install-recommends zfs-dkms zfsutils-linux
+  
+  #modprobe zfs ; sleep 5 ; zpool version
+  #-----------------------------------------
+}
+
+archlinux() {
+  GUEST=${1:-archlinux-Rolling-lvm}
+  ISO_PATH=${ISO_PATH:-`find ${ISOS_PARDIR}/archlinux -name 'archlinux-*.iso' | tail -n1`}
+  #IMAGE_OPTS=${IMAGE_OPTS:-"-cdrom ${ISO_PATH}"}
+  INST_SRC_OPTS=${INST_SRC_OPTS:---cdrom="${ISO_PATH}"}
+  (cd ${ISOS_PARDIR}/archlinux ; sha1sum --ignore-missing -c sha1sums.txt) ; sleep 5
+  
+  ##!! login user/passwd: -/- 
+  
+  #mount -o remount,size=1G /run/archiso/cowspace ; df -h ; sleep 5
+  #pacman-key --init ; pacman-key --populate archlinux
+  #pacman -Sy archlinux-keyring ; pacman -Sy
+  
+  #------------ if using ZFS ---------------
+  ## NOTE, transfer archzfs config file: init/archlinux/repo_archzfs.cfg
+  #cat init/archlinux/repo_archzfs.cfg >> /etc/pacman.conf
+  #curl -o /tmp/archzfs.gpg http://archzfs.com/archzfs.gpg
+  #pacman-key --add /tmp/archzfs.gpg ; pacman-key --lsign-key F75D9D76
+  
+  #pacman -Sy zfs-utils
+  
+  #pacman -Sy zfs-dkms
+  ##--- or retrieve archived zfs-linux package instead of zfs-dkms ---
+  ## Note, xfer archived zfs-linux package matching kernel (uname -r)
+  ## example kernelver -> 5.7.11-arch1-1 becomes 5.7.11.arch1.1-1
+  ## curl -o /tmp/zfs-linux.pkg.tar.zst 'http://mirror.sum7.eu/archlinux/archzfs/archive_archzfs/zfs-linux-<ver>_<kernelver>-x86_64.pkg.tar.zst'
+  ## pacman -U /tmp/zfs-linux.pkg.tar.zst
+  ##---
+  
+  #modprobe zfs ; sleep 5 ; zpool version
+  #-----------------------------------------
+}
+
+opensuse() {
+  GUEST=${1:-opensuse-Stable-lvm}
+  ISO_PATH=${ISO_PATH:-`find ${ISOS_PARDIR}/opensuse-live -name 'openSUSE-Leap-*-Live-x86_64-*.iso' | tail -n1`}
+  #IMAGE_OPTS=${IMAGE_OPTS:-"-cdrom ${ISO_PATH}"}
+  INST_SRC_OPTS=${INST_SRC_OPTS:---cdrom="${ISO_PATH}"}
+  (cd ${ISOS_PARDIR}/opensuse-live ; sha256sum --ignore-missing -c openSUSE-Leap-*-Live-x86_64-*.iso.sha256) ; sleep 5
+  
+  ##!! login user/passwd: linux/-
+  
+  #sudo su ; export MIRRORHOST=download.opensuse.org ; . /etc/os-release
+  #zypper --non-interactive refresh
+  
+  #zypper install ca-certificates-cacert ca-certificates-mozilla ca-certificates efibootmgr lvm2
+  #zypper --gpg-auto-import-keys refresh
+  #update-ca-certificates
+  
+  #------------ if using ZFS ---------------
+  #zypper --non-interactive install --no-recommends kernel-devel
+  #zypper --gpg-auto-import-keys addrepo http://${MIRRORHOST}/repositories/filesystems/openSUSE_Leap_${VERSION_ID}/filesystems.repo
+  #zypper --gpg-auto-import-keys refresh
+  #zypper --non-interactive install zfs
   
   #modprobe zfs ; sleep 5 ; zpool version
   #-----------------------------------------
@@ -177,6 +289,27 @@ sleep 30
 #void linux: (MIRROR: mirror.clarkson.edu/voidlinux)
   ## dnld: http://${MIRROR}/static/xbps-static-latest.x86_64-musl.tar.xz
   #  package(s): xbps-install.static (download xbps-static tarball)
+  
+#arch linux variants(arch, artix):
+  #  package(s): pacman, ? libffi
+  ## ----- config pacman.conf & mirrorlist -----
+  #mkdir -p /etc/pacman.d
+  #curl -s "https://www.archlinux.org/mirrorlist/?country=${LOCALE_COUNTRY:-US}&use_mirror_status=on" | sed -e 's|^#Server|Server|' -e '/^#/d' | tee /etc/pacman.d/mirrorlist-arch
+  #(artix only) curl -s "https://gitea.artixlinux.org/packagesA/artix-mirrorlist/raw/branch/master/trunk/mirrorlist" | tee /etc/pacman.d/mirrorlist-artix
+  #(artix only) curl -s "https://gitea.artixlinux.org/packagesP/pacman/raw/branch/master/trunk/pacman.conf" | tee /etc/pacman.conf
+  #(artix only) cp /etc/pacman.d/mirrorlist-artix /etc/pacman.d/mirrorlist
+  #(arch only) cat init/archlinux/etc_pacman.conf-arch >> /etc/pacman.conf
+  #(arch only) cp /etc/pacman.d/mirrorlist-arch /etc/pacman.d/mirrorlist
+  #pacman-key --init ; pacman-key --populate [artix | archlinux]
+  #pacman-key --recv-keys 'arch@eworm.de' ; pacman-key --lsign-key 498E9CEE
+  #pacman -Sy [artix | archlinux]-keyring
+  
+#alpine linux: (MIRROR: mirror.math.princeton.edu/pub/alpinelinux)
+  ## dnld: http://${MIRROR}/latest-stable/main/x86_64/apk-tools-static-*.apk
+  #  package(s): apk.static (download apk[-tools]-static)
+  
+#suse variants(opensuse): (MIRROR: download.opensuse.org)
+  #  package(s): zypper, ? rinse
   
 #----------------------------------------
 ## (Linux distro) install via chroot

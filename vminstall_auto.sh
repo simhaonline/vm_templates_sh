@@ -81,6 +81,52 @@ debian() {
   ## NOTE, debconf-get-selections [--installer] -> auto install cfg
 }
 
+alpine() {
+  VOL_MGR=${VOL_MGR:-lvm} ; GUEST=${1:-alpine-Stable-${VOL_MGR}}
+  ISO_PATH=${ISO_PATH:-`find ${ISOS_PARDIR}/alpine -name 'alpine-extended-*-x86_64.iso' | tail -n1`}
+  #IMAGE_OPTS=${IMAGE_OPTS:-"-cdrom ${ISO_PATH}"}
+  INST_SRC_OPTS=${INST_SRC_OPTS:---cdrom="${ISO_PATH}"}
+  if [ ! "" = "$ISO_PATH" ] ; then
+    (cd ${ISOS_PARDIR}/alpine ; sha256sum --ignore-missing -c alpine-extended-*-x86_64.iso.sha256) ;
+    sleep 5 ;
+  fi
+  tar -cf /tmp/init.tar init/common init/alpine
+  
+  echo "### Once network connected, transfer needed file(s) ###" ; sleep 5
+  
+  ##!! login user/passwd: root/-
+  
+  #ifconfig ; ifconfig {ifdev} up ; udhcpc -i {ifdev} ; cd /tmp
+  
+  ## NOTE, transfer [dir(s) | file(s)]: init/common, init/alpine
+  
+  #service sshd stop
+  #export MIRROR=mirror.math.princeton.edu/pub/alpinelinux
+  #APKREPOSOPTS=http://${MIRROR}/latest-stable/main BOOT_SIZE=200 BOOTLOADER=grub DISKLABEL=gpt setup-alpine -f init/alpine/lvm-answers
+  # .. reboot
+  # .. after reboot
+  #sh init/alpine/post_autoinstall.sh [$CRYPTED_PASSWD]
+}
+
+
+opensuse() {
+  VOL_MGR=${VOL_MGR:-lvm} ; GUEST=${1:-opensuse-Stable-${VOL_MGR}}
+  ISO_PATH=${ISO_PATH:-`find ${ISOS_PARDIR}/opensuse -name 'openSUSE-Leap-*-NET-x86_64.iso' | tail -n1`}
+  #IMAGE_OPTS=${IMAGE_OPTS:-"-cdrom ${ISO_PATH}"}
+  #INST_SRC_OPTS=${INST_SRC_OPTS:---location="http://download.opensuse.org/distribution/openSUSE-stable/repo/oss"}
+  INST_SRC_OPTS=${INST_SRC_OPTS:---location="${ISO_PATH}"}
+  INITRD_INJECT_OPTS=${INITRD_INJECT_OPTS:---initrd-inject="/tmp/autoinst.xml" --initrd-inject="/tmp/init.tar"}
+  EXTRA_ARGS_OPTS=${EXTRA_ARGS_OPTS:---extra-args="netsetup=dhcp lang=en_US hostname=opensuse-boxv0000 domain= autoyast=file:///autoinst.xml textmode=1 install=http://"}
+  if [ ! "" = "$ISO_PATH" ] ; then
+    (cd ${ISOS_PARDIR}/opensuse ; sha256sum --ignore-missing -c openSUSE-Leap-*-NET-x86_64.iso.sha256) ;
+    sleep 5 ;
+  fi
+  cp init/suse/${VOL_MGR}-autoinst.xml /tmp/autoinst.xml
+  tar -cf /tmp/init.tar init/common init/suse
+  
+  ## NOTE, yast2 clone_system -> auto install config: /root/autoinst.xml
+}
+
 #----------------------------------------
 ${@:-freebsd}
   
