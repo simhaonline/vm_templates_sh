@@ -229,6 +229,125 @@ opensuse() {
   #-----------------------------------------
 }
 
+centos() {
+  GUEST=${1:-centos-Release-lvm}
+  ISO_PATH=${ISO_PATH:-`find ${ISOS_PARDIR}/centos-live -name 'CentOS-*-x86_64-Live*.iso' | tail -n1`}
+  #IMAGE_OPTS=${IMAGE_OPTS:-"-cdrom ${ISO_PATH}"}
+  INST_SRC_OPTS=${INST_SRC_OPTS:---cdrom="${ISO_PATH}"}
+  (cd ${ISOS_PARDIR}/centos-live ; sha256sum --ignore-missing -c sha256sum.txt) ; sleep 5
+  
+  ##!! login user/passwd: liveuser/-
+  
+  #export MIRRORHOST=mirror.centos.org/centos
+  #[dnf | yum] -y check-update ; sestatus ; sleep 5
+  #[dnf | yum] -y install nmap-ncat
+  
+  #------------ if using ZFS ---------------
+  #[dnf | yum] -y install epel-release
+  #kver=$([dnf | yum] list --installed kernel | sed -n 's|kernel[a-z0-9._]*[ ]*\([^ ]*\)[ ]*.*$|\1|p' | tail -n1)
+  #[dnf | yum] -y install kernel-devel-$kver.x86_64
+  #os_ver=$(sed 's|.* \([0-9]*\.[0-9]*\).*|\1|' /etc/redhat-release | tr . _)
+  #[dnf | yum] -y install http://download.zfsonlinux.org/epel/zfs-release.el$os_ver.noarch.rpm
+  #[dnf | yum] -y install zfs
+  
+  #modprobe zfs ; sleep 5 ; zpool version
+  #-----------------------------------------
+}
+
+mageia() {
+  GUEST=${1:-mageia-Release-lvm}
+  ISO_PATH=${ISO_PATH:-`find ${ISOS_PARDIR}/mageia-live -name 'Mageia-*-Live-*-x86_64.iso' | tail -n1`}
+  #IMAGE_OPTS=${IMAGE_OPTS:-"-cdrom ${ISO_PATH}"}
+  INST_SRC_OPTS=${INST_SRC_OPTS:---cdrom="${ISO_PATH}"}
+  (cd ${ISOS_PARDIR}/mageia-live ; sha512sum --ignore-missing -c Mageia-*-Live-*-x86_64.iso.sha512) ; sleep 5
+  
+  ##!! login user/passwd: live/-
+  
+  #su -
+  #export MIRRORHOST=mirror.math.princeton.edu/pub/mageia
+  #dnf -y check-update ; sleep 5
+}
+
+pclinuxos() {
+  GUEST=${1:-pclinuxos-Rolling-lvm}
+  ISO_PATH=${ISO_PATH:-`find ${ISOS_PARDIR}/pclinuxos -name 'pclinuxos64-*.iso' | tail -n1`}
+  #IMAGE_OPTS=${IMAGE_OPTS:-"-cdrom ${ISO_PATH}"}
+  INST_SRC_OPTS=${INST_SRC_OPTS:---cdrom="${ISO_PATH}"}
+  (cd ${ISOS_PARDIR}/pclinuxos ; md5sum --ignore-missing -c pclinuxos64-*.md5sum) ; sleep 5
+  ##append to boot parameters: nokmsboot 3 text textmode=1 nomodeset keyb=us
+  
+  ##!! login user/passwd: guest/-
+  
+  #su -
+  #export MIRRORHOST=spout.ussg.indiana.edu/linux/pclinuxos
+  #sed -i 's|^[ ]*rpm|# rpm|' /etc/apt/sources.list
+  #sed -i "/${MIRRORHOST}/ s|^.*rpm|rpm|" /etc/apt/sources.list
+  #apt-get -y update ; sleep 5
+  #apt-get -y install netcat gdisk efibootmgr lvm2
+  #apt-get -y --fix-broken install
+
+#----------------------------------------
+## (Linux distro) install via chroot
+## NOTE, transfer [dir(s) | file(s)]: init/common, init/<variant>
+
+#  export DEVX=sda ; [[sgdisk -p | sfdisk -l] /dev/$DEVX | parted /dev/$DEVX -s unit GiB print]
+#  sh init/common/disk_setup_vmlinux.sh part_format_vmdisk [sgdisk | sfdisk | parted] [lvm] [ .. ]
+#  sh init/common/disk_setup_vmlinux.sh mount_filesystems [ .. ]
+
+#  sh init/<variant>/lvm-install.sh [hostname [$PLAIN_PASSWD]]
+#----------------------------------------
+}
+
+netbsd() {
+  GUEST=${1:-netbsd-Release-std}
+  ISO_PATH=${ISO_PATH:-`find ${ISOS_PARDIR}/netbsd -name 'NetBSD-*-amd64.iso' | tail -n1`}
+  #IMAGE_OPTS=${IMAGE_OPTS:-"-cdrom ${ISO_PATH}"}
+  INST_SRC_OPTS=${INST_SRC_OPTS:---cdrom="${ISO_PATH}"}
+  (cd ${ISOS_PARDIR}/netbsd ; sha512sum --ignore-missing -c SHA512) ; sleep 5
+  
+  ##!! (chrootsh) navigate thru installer to shell: 1 ; a ; a ; e ; a
+  
+  #ksh
+  #mount_mfs -s 100m md1 /tmp ; cd /tmp
+  #ifconfig ; dhcpcd {ifdev}
+  
+  ## (NetBSD) install via chroot
+  ## NOTE, transfer [dir(s) | file(s)]: init/common, init/netbsd
+  
+  #DEVX=sd0 ; gpt show -l sd0
+  #sh init/netbsd/gpt_setup_vmnetbsd.sh part_format_vmdisk [std]
+  #sh init/netbsd/gpt_setup_vmnetbsd.sh mount_filesystems
+  
+  #sh init/netbsd/std-install.sh [hostname [$PLAIN_PASSWD]]
+}
+
+openbsd() {
+  GUEST=${1:-openbsd-Release-std}
+  ISO_PATH=${ISO_PATH:-`find ${ISOS_PARDIR}/openbsd -name 'install*.iso' | tail -n1`}
+  #IMAGE_OPTS=${IMAGE_OPTS:-"-cdrom ${ISO_PATH}"}
+  INST_SRC_OPTS=${INST_SRC_OPTS:---cdrom="${ISO_PATH}"}
+  (cd ${ISOS_PARDIR}/openbsd ; sha256sum --ignore-missing -c SHA256) ; sleep 5
+  
+  ## ?? boot uefi NOT WORKING for iso ??
+  QBIOS_OPTS=" "
+  VBIOS_OPTS=" "
+  
+  ##!! login user/passwd: root/-
+  ##!! (chrootsh) enter shell: S
+  
+  #mount -t mfs -s 100m md1 /tmp ; mount -t mfs -s 100m md2 /mnt ; cd /tmp
+  #ifconfig ; dhclient -L /tmp/dhclient.lease.{ifdev} {ifdev}
+  
+  ## (OpenBSD) install via chroot
+  ## NOTE, transfer [dir(s) | file(s)]: init/common, init/openbsd
+  
+  #DEVX=sd0 ; fdisk sd0
+  #sh init/openbsd/disklabel_setup_vmopenbsd.sh part_format_vmdisk [std]
+  #sh init/openbsd/disklabel_setup_vmopenbsd.sh mount_filesystems
+  
+  #sh init/openbsd/std-install.sh [hostname [$PLAIN_PASSWD]]
+}
+
 #----------------------------------------
 ${@:-freebsd freebsd-Release-zfs}
   
@@ -310,6 +429,24 @@ sleep 30
   
 #suse variants(opensuse): (MIRROR: download.opensuse.org)
   #  package(s): zypper, ? rinse
+  
+#redhat variants(centos): (MIRROR: mirror.centos.org/centos)
+  #  package(s): rpm, [dnf | yum], ? [dnf-plugins-core | yum-utils]
+  ## ----- config repos & gpg keys -----
+  #mkdir -p /etc/pki/rpm-gpg /etc/yum.repos.d
+  #wget -O /etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial http://www.centos.org/keys/RPM-GPG-KEY-CentOS-Official
+  #yum-config-manager --add-repo http://${MIRROR}/8/BaseOS/x86_64/os
+  #yum-config-manager --add-repo http://${MIRROR}/8/AppStream/x86_64/os
+  #yum-config-manager --add-repo http://${MIRROR}/8/extras/x86_64/os
+  #echo 'gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial' >> /etc/yum.repos.d/mirror.centos.org_centos_8_BaseOS_x86_64_os.repo
+  #echo 'gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial' >> /etc/yum.repos.d/mirror.centos.org_centos_8_AppStream_x86_64_os.repo
+  #echo 'gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial' >> /etc/yum.repos.d/mirror.centos.org_centos_8_extras_x86_64_os.repo
+  
+#mageia: (MIRROR: mirror.math.princeton.edu/pub/mageia)
+  #  package(s): ? dnf
+  
+#pclinuxos: (MIRROR: spout.ussg.indiana.edu/linux/pclinuxos)
+  #  package(s): ?
   
 #----------------------------------------
 ## (Linux distro) install via chroot
